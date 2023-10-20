@@ -1,4 +1,5 @@
 from distutils.command.clean import clean
+from http.client import HTTPResponse
 from django.shortcuts import render, redirect
 from django.views.generic.edit import FormView
 from django.urls import reverse_lazy
@@ -11,6 +12,8 @@ from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.views import LoginView
 from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
+from django.views import View
+from django.views.generic import TemplateView
 
 class SignUp(CreateView):
     model = User
@@ -32,6 +35,22 @@ class SignUp(CreateView):
         user.save()
         self.send_verification_email(user)
         return response
+
+class Positive(TemplateView):
+    template_name = 'positive.html'
+
+class Negative(TemplateView):
+    template_name = 'negative.html'
+
+class VerifyEmailView(View):
+    def get(self, request, user_pk, token):
+        user = User.objects.get(pk=user_pk)
+        if default_token_generator.check_token(user, token):
+            user.is_active = True
+            user.save()
+            return redirect('positive')
+        else:
+            return redirect('negaitve')
 
 class Login(LoginView):
     template_name = 'login.html'
